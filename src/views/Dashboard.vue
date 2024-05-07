@@ -4,13 +4,16 @@ import MiniStatisticsCard from "@/examples/Cards/MiniStatisticsCard.vue";
 // import CategoriesList from "./components/CategoriesList.vue";
 import ArgonInput from "@/components/ArgonInput.vue";
 import ArgonButton from "@/components/ArgonButton.vue";
-import { ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import { v4 as uuidv4 } from 'uuid';
+import ArgonAlert from "../components/ArgonAlert.vue";
+import axios from "axios";
 
 const productForm = ref({
-  date: "",
-  location: "",
-  saleDate: "",
   id: "",
+  location: "",
+  produce_date: "",
+  sale_date: "",
 });
 
 const resultForm = ref({
@@ -20,25 +23,85 @@ const resultForm = ref({
   id: "9",
 })
 
-const nodeId=ref(0)
 
 const todaySaleMount=ref(0) //今日销售量
 const todayProductMount=ref(0) //今日生产量
 
+const socket=ref(null)
+
+const alertMessage=ref('')
+const alertColor=ref('')
+const alertIcon=ref('')
+
+const saleId=ref('')
 
 
+const produce=()=>{
+  productForm.value.id=uuidv4()
+  const message=JSON.stringify(productForm.value)
+  socket.value.send(message)
+}
 
-// const product=()=>{
-//   console.log(productForm.value)
-// }
+const sale=()=>{
+  axios.get('http://localhost:9000/sale').then((res)=>{
+      if (res.data && res.data.status===10000){
+        alertColor.value = 'success';
+        alertIcon.value = 'ni ni-check-bold';
+        alertMessage.value = '购买成功';
+        saleId.value=res.data.message
+      }else{
+        alertColor.value='danger'
+        alertIcon.value='ni ni-fat-remove'
+        alertMessage.value='购买失败, '+res.data.message
+        saleId.value=''
+      }
+      setTimeout(() => {
+        alertMessage.value = '';
+      }, 3000);
+    })
+  }
+
+onMounted(()=>{
+  socket.value = new WebSocket('ws://localhost:9000/ws')
+  socket.value.addEventListener('open',()=>{
+    console.log('connected')
+  })
+  socket.value.addEventListener('message',(event)=>{
+    const data=event.data
+    console.log(data)
+    if (data==='success'){
+      alertColor.value = 'success';
+      alertIcon.value = 'ni ni-check-bold';
+      alertMessage.value = '生产成功';
+    }else if (data==='failed'){
+      alertColor.value='danger'
+      alertIcon.value='ni ni-fat-remove'
+      alertMessage.value='生产失败'
+    }
+
+    setTimeout(() => {
+      alertMessage.value = '';
+    }, 1500);
+  })
+
+})
+
+onUnmounted(()=>{
+  if (socket.value){
+    socket.value.close()
+  }
+})
 
 </script>
 <template>
+  <argon-alert v-if="alertMessage" :color="alertColor" :icon="alertIcon">
+    {{ alertMessage }}
+  </argon-alert>
   <div class="py-4 container-fluid">
     <div class="row">
       <div class="col-lg-12">
         <div class="row">
-          <div class="col-lg-4 col-md-6 col-12">
+          <div class="col-lg-6 col-md-6 col-12">
             <mini-statistics-card
               title="今日销售量"
               :value="todaySaleMount.toString()"
@@ -52,7 +115,7 @@ const todayProductMount=ref(0) //今日生产量
               }"
             />
           </div>
-          <div class="col-lg-4 col-md-6 col-12">
+          <div class="col-lg-6 col-md-6 col-12">
             <mini-statistics-card
               title="今日生产量"
               :value="todayProductMount.toString()"
@@ -66,7 +129,7 @@ const todayProductMount=ref(0) //今日生产量
               }"
             />
           </div>
-          <div class="col-lg-4">
+          <div class="col-lg-12">
             <div class="card">
               <div class="card-body">
                 <div class="row p-2">
@@ -74,9 +137,15 @@ const todayProductMount=ref(0) //今日生产量
                     <h5 class="mb-0">购买茅台酒</h5>
                   </div>
                   <div class="my-1.5 col-6 text-end">
-                    <argon-button color="dark" variant="gradient">
+                    <argon-button @click="sale()" color="dark" variant="gradient">
                       购买
                     </argon-button>
+                  </div>
+                </div>
+                <div class="row p-2">
+                  <div class="col-12">
+                    <h6>购买茅台酒的ID:</h6>
+                    <span>{{saleId}}</span>
                   </div>
                 </div>
               </div>
@@ -99,7 +168,7 @@ const todayProductMount=ref(0) //今日生产量
                         placeholder="选择日期"
                         name="date"
                         size="lg"
-                        v-model="productForm.date"
+                        v-model="productForm.produce_date"
                       />
                     </div>
                     <div class="mb-3">
@@ -111,21 +180,12 @@ const todayProductMount=ref(0) //今日生产量
                         v-model="productForm.location"
                       />
                     </div>
-                    <div class="mb-3">
-                      <argon-input
-                        id="nodeId"
-                        placeholder="生产节点编号"
-                        name="nodeId"
-                        size="lg"
-                        v-model="nodeId"
-                      />
-                    </div>
                     <div class="text-center">
                       <argon-button
                         class="mt-4"
                         variant="gradient"
                         size="lg"
-                        @click="console.log(productForm)"
+                        @click="produce()"
                         >生产</argon-button
                       >
                     </div>

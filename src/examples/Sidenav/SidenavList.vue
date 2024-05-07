@@ -47,7 +47,7 @@ const getRoute = () => {
         </sidenav-item>
       </li>
 
-      <li class="nav-item">
+      <!-- <li class="nav-item">
         <sidenav-item
           to="/billing"
           :class="getRoute() === 'billing' ? 'active' : ''"
@@ -135,7 +135,7 @@ const getRoute = () => {
             <i class="ni ni-collection text-info text-sm opacity-10"></i>
           </template>
         </sidenav-item>
-      </li>
+      </li> -->
     </ul>
   </div>
 </template>
