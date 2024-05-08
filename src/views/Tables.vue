@@ -2,22 +2,41 @@
 // import AuthorsTable from "./components/AuthorsTable.vue";
 // import ProjectsTable from "./components/ProjectsTable.vue";
 
-import { ref } from "vue";
+import {onMounted, ref} from "vue";
+import axios from "axios";
 
-function block(){
+function block(index,timestamp,id,produce_date,location,sale_date,prevhash,hash){
   return {
-    index: 0,
-    timestamp: "8893939",
-    id: "333",
-    product_date: new Date().toDateString(),
-    product_location: "河北",
-    product_sale_date: new Date().toDateString(),
-    prevhash: "89990",
-    hash: "83993hh",
+    index: index,
+    timestamp: timestamp,
+    id: id,
+    produce_date: produce_date,
+    location: location,
+    sale_date: sale_date,
+    prevhash: prevhash,
+    hash: hash,
   }
 }
+const blocks = ref([]);
 
-const blocks = ref([block(),block()]);
+const getBlocks=()=>{
+  axios.get('http://localhost:9000/').then((res)=>{
+    if (res.data && res.data.status===10000){
+      blocks.value=res.data.data.map((item)=>{
+        return block(item.index,item.timestamp,item.maotai_data.id,item.maotai_data.produce_date,
+            item.maotai_data.location,item.maotai_data.sale_date,item.prev_hash,item.hash)
+      })
+    }else {
+      console.log(res.data.message)
+    }
+  })
+}
+
+
+onMounted(()=>{
+  getBlocks()
+})
+
 </script>
 <template>
   <div class="py-4 container-fluid">
@@ -51,7 +70,7 @@ const blocks = ref([block(),block()]);
                     <th
                       class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
                     >
-                      product_date
+                      produce_date
                     </th>
                     <th
                       class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
@@ -81,9 +100,9 @@ const blocks = ref([block(),block()]);
                     <td><span class="text-xs font-weight-bold mx-3">{{ block.index }}</span></td>
                     <td><span class="text-xs font-weight-bold">{{ block.timestamp }}</span></td>
                     <td><span class="text-xs font-weight-bold mx-3">{{ block.id }}</span></td>
-                    <td><span class="text-xs font-weight-bold mx-5">{{ block.product_date }}</span></td>
-                    <td><span class="text-xs font-weight-bold mx-5">{{ block.product_location }}</span></td>
-                    <td><span class="text-xs font-weight-bold mx-5">{{ block.product_sale_date }}</span></td>
+                    <td><span class="text-xs font-weight-bold mx-5">{{ block.produce_date }}</span></td>
+                    <td><span class="text-xs font-weight-bold mx-5">{{ block.location }}</span></td>
+                    <td><span class="text-xs font-weight-bold mx-5">{{ block.sale_date }}</span></td>
                     <td><span class="text-xs font-weight-bold mx-5">{{ block.prevhash }}</span></td>
                     <td><span class="text-xs font-weight-bold mx-5">{{ block.hash }}</span></td>
                   </tr>

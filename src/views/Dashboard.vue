@@ -4,7 +4,7 @@ import MiniStatisticsCard from "@/examples/Cards/MiniStatisticsCard.vue";
 // import CategoriesList from "./components/CategoriesList.vue";
 import ArgonInput from "@/components/ArgonInput.vue";
 import ArgonButton from "@/components/ArgonButton.vue";
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref} from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import ArgonAlert from "../components/ArgonAlert.vue";
 import axios from "axios";
@@ -17,10 +17,10 @@ const productForm = ref({
 });
 
 const resultForm = ref({
-  date: new Date().toDateString(),
-  location: "河北",
-  saleDate: new Date().toDateString(),
-  id: "9",
+  id: "",
+  location: "",
+  produce_date: "",
+  sale_date: "",
 })
 
 
@@ -34,12 +34,34 @@ const alertColor=ref('')
 const alertIcon=ref('')
 
 const saleId=ref('')
+const searchId=ref('')
 
+
+const getTodaySaleMount=()=>{
+  axios.get('http://localhost:9000/today_sale').then((res)=>{
+    if (res.data && res.data.status===10000){
+      todaySaleMount.value=parseInt(res.data.message)
+    }else{
+      console.log(res.data.message)
+    }
+  })
+}
+
+const getTodayProductMount=()=>{
+  axios.get('http://localhost:9000/today_produce').then((res)=>{
+    if (res.data && res.data.status===10000){
+      todayProductMount.value=parseInt(res.data.message)
+    }else{
+      console.log(res.data.message)
+    }
+  })
+}
 
 const produce=()=>{
   productForm.value.id=uuidv4()
   const message=JSON.stringify(productForm.value)
   socket.value.send(message)
+  todayProductMount.value+=1
 }
 
 const sale=()=>{
@@ -59,7 +81,26 @@ const sale=()=>{
         alertMessage.value = '';
       }, 3000);
     })
-  }
+  todaySaleMount.value+=1
+}
+
+const search=()=>{
+  axios.get('http://localhost:9000/search?id='+searchId.value).then((res)=>{
+    if (res.data && res.data.status===10000){
+      resultForm.value=res.data.data
+      alertColor.value = 'success';
+      alertIcon.value = 'ni ni-check-bold';
+      alertMessage.value = '查询成功';
+    }else{
+      alertColor.value='danger'
+      alertIcon.value='ni ni-fat-remove'
+      alertMessage.value='查询失败, '+res.data.message
+    }
+    setTimeout(() => {
+      alertMessage.value = '';
+    }, 3000);
+  })
+}
 
 onMounted(()=>{
   socket.value = new WebSocket('ws://localhost:9000/ws')
@@ -83,6 +124,9 @@ onMounted(()=>{
       alertMessage.value = '';
     }, 1500);
   })
+
+  getTodaySaleMount()
+  getTodayProductMount()
 
 })
 
@@ -209,6 +253,7 @@ onUnmounted(()=>{
                     placeholder="输入编号"
                     name="id"
                     size="lg"
+                    v-model="searchId"
                   />
                 </div>
                 <div class="text-center">
@@ -217,6 +262,7 @@ onUnmounted(()=>{
                     variant="gradient"
                     color="success"
                     size="lg"
+                    @click="search()"
                     >查询</argon-button
                   >
                 </div>
@@ -232,9 +278,9 @@ onUnmounted(()=>{
               <div class="card-body">
                 <div class="mb-3">
                   <h6>编号: {{ resultForm.id }}</h6>
-                  <h6>生产日期: {{resultForm.date  }}</h6>
+                  <h6>生产日期: {{resultForm.produce_date  }}</h6>
                   <h6>产地: {{ resultForm.location }}</h6>
-                  <h6>销售日期: {{ resultForm.saleDate }}</h6>
+                  <h6>销售日期: {{ resultForm.sale_date }}</h6>
                 </div>
               </div>
             </div>

@@ -10,4 +10,5 @@ const appInstance = createApp(App);
 appInstance.use(store);
 appInstance.use(router);
 appInstance.use(ArgonDashboard);
+document.title = "茅台酒区块链系统";
 appInstance.mount("#app");
